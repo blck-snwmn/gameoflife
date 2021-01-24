@@ -111,6 +111,16 @@ impl GameBoard {
         xxxx
     }
 
+    pub fn change_state(state: Cell, live_num: usize) -> Cell {
+        match (state, live_num) {
+            (Cell::Dead, 3) => Cell::Alive,                     // birth
+            (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive, // survival
+            (Cell::Alive, x) if x < 2 => Cell::Dead,            // depopulation
+            (Cell::Alive, x) if x > 3 => Cell::Dead,            // overcrowding
+            (x, _) => x,
+        }
+    }
+
     pub fn tick(&mut self) {
         let next = self
             .cells
@@ -126,13 +136,7 @@ impl GameBoard {
                     .collect();
 
                 let live_num = target_cells.iter().filter(|x| x.is_alive()).count();
-                match (*state, live_num) {
-                    (Cell::Dead, 3) => Cell::Alive,                     // birth
-                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive, // survival
-                    (Cell::Alive, x) if x < 2 => Cell::Dead,            // depopulation
-                    (Cell::Alive, x) if x > 3 => Cell::Dead,            // overcrowding
-                    (x, _) => x,
-                }
+                GameBoard::change_state(*state, live_num)
             })
             .collect();
         self.cells = next;
@@ -220,5 +224,27 @@ mod tests {
             GameBoard::get_target(3, 3, 3).sort(),
             vec![(0, 0), (0, 1), (1, 1), (2, 0), (2, 1)].sort()
         );
+    }
+
+    #[test]
+    fn test_change_state() {
+        assert_eq!(GameBoard::change_state(Cell::Dead, 0), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 1), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 2), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 3), Cell::Alive);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 4), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 5), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 6), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 7), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Dead, 8), Cell::Dead);
+
+        assert_eq!(GameBoard::change_state(Cell::Alive, 0), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 1), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 2), Cell::Alive);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 3), Cell::Alive);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 4), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 5), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 6), Cell::Dead);
+        assert_eq!(GameBoard::change_state(Cell::Alive, 7), Cell::Dead);
     }
 }
