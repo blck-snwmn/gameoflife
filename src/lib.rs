@@ -64,6 +64,37 @@ impl GameBoard {
         self.cells.as_ptr()
     }
 
+    pub fn change_state(state: Cell, live_num: usize) -> Cell {
+        match (state, live_num) {
+            (Cell::Dead, 3) => Cell::Alive,                     // birth
+            (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive, // survival
+            (Cell::Alive, x) if x < 2 => Cell::Dead,            // depopulation
+            (Cell::Alive, x) if x > 3 => Cell::Dead,            // overcrowding
+            (x, _) => x,
+        }
+    }
+
+    pub fn tick(&mut self) {
+        let next = self
+            .cells
+            .iter()
+            .enumerate()
+            .map(|(index, state)| {
+                let targets = GameBoard::get_target(index as u32, self.width(), self.height());
+                let target_indexies = targets
+                    .iter()
+                    .map(|(row, col)| GameBoard::get_index(*row, *col, self.width()));
+                let target_cells: Vec<&Cell> = target_indexies
+                    .map(|index| self.cells.get(index as usize).unwrap_or(&Cell::Dead))
+                    .collect();
+
+                let live_num = target_cells.iter().filter(|x| x.is_alive()).count();
+                GameBoard::change_state(*state, live_num)
+            })
+            .collect();
+        self.cells = next;
+    }
+
     fn get_row_col(index: u32, w: u32) -> (u32, u32) {
         let row: u32 = index / w;
         let col: u32 = index % w;
@@ -109,37 +140,6 @@ impl GameBoard {
             xxxx.push((row - 1, col - 1));
         }
         xxxx
-    }
-
-    pub fn change_state(state: Cell, live_num: usize) -> Cell {
-        match (state, live_num) {
-            (Cell::Dead, 3) => Cell::Alive,                     // birth
-            (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive, // survival
-            (Cell::Alive, x) if x < 2 => Cell::Dead,            // depopulation
-            (Cell::Alive, x) if x > 3 => Cell::Dead,            // overcrowding
-            (x, _) => x,
-        }
-    }
-
-    pub fn tick(&mut self) {
-        let next = self
-            .cells
-            .iter()
-            .enumerate()
-            .map(|(index, state)| {
-                let targets = GameBoard::get_target(index as u32, self.width(), self.height());
-                let target_indexies = targets
-                    .iter()
-                    .map(|(row, col)| GameBoard::get_index(*row, *col, self.width()));
-                let target_cells: Vec<&Cell> = target_indexies
-                    .map(|index| self.cells.get(index as usize).unwrap_or(&Cell::Dead))
-                    .collect();
-
-                let live_num = target_cells.iter().filter(|x| x.is_alive()).count();
-                GameBoard::change_state(*state, live_num)
-            })
-            .collect();
-        self.cells = next;
     }
 }
 
