@@ -112,7 +112,6 @@ impl GameBoard {
     }
 
     pub fn tick(&mut self) {
-        println!("call");
         let next = self
             .cells
             .iter()
