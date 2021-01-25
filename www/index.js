@@ -15,13 +15,10 @@ canvas.height = h * (cellSize + 1) + 2;
 canvas.width = w * (cellSize + 1) + 2;
 
 const ctx = canvas.getContext('2d');
-const loop = () => {
-  ctx.beginPath();
-  board.tick();
 
-  const cellsPtr = board.cells();
-  const cells = new Uint8Array(memory.buffer, cellsPtr, w * h);
-  // draw grid
+const drawGrid = () => {
+  ctx.beginPath();
+
   ctx.strokeStyle = 'gray';
   ctx.lineWidth = 1;
   for (let i = 0; i <= w; i++) {
@@ -32,7 +29,14 @@ const loop = () => {
     ctx.moveTo(0, j * (cellSize + 1));
     ctx.lineTo((cellSize + 1) * w, j * (cellSize + 1));
   }
-  // draw cell
+  ctx.stroke();
+}
+
+const drawCells = () => {
+  ctx.beginPath();
+  const cellsPtr = board.cells();
+  const cells = new Uint8Array(memory.buffer, cellsPtr, w * h);
+
   cells.forEach((element, index) => {
     const col = index % w;
     const row = Math.floor(index / w);
@@ -48,7 +52,32 @@ const loop = () => {
     );
   });
   ctx.stroke();
+}
+const draw = () => {
+  drawGrid();
+  drawCells();
+}
 
+let canDo = false;
+
+const loop = () => {
+  if (!canDo) {
+    return
+  }
+  board.tick();
+  draw()
   requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);
+
+draw()
+
+const startBtn = document.getElementById("start");
+startBtn.onclick = () => {
+  canDo = true;
+  loop();
+}
+
+const stopBtn = document.getElementById("stop");
+stopBtn.onclick = () => {
+  canDo = false;
+}
